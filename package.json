@@ -1,0 +1,24 @@
+{
+  "name": "snapflow-cli",
+  "version": "1.0.0",
+  "license": "MIT",
+  "main": "src/cli/main.js",
+  "bin": {
+    "snapflow": "src/cli/snapflow.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "@hono/node-server": "^1.2.3",
+    "console-table-printer": "^2.11.2",
+    "dayjs": "^1.11.10",
+    "find-node-modules": "^2.1.3",
+    "fullstack-utils": "^1.0.0",
+    "hono": "^3.10.2",
+    "node-cron": "^3.0.3",
+    "open": "^9.1.0",
+    "quickmin-api": "^1.0.0",
+    "url-join": "^5.0.0",
+    "wrangler": "^3.17.0",
+    "yargs": "^17.7.2"
+  }
+}

@@ -1,0 +1,7 @@
+name = "$$PROJECT_NAME$$"
+main = "worker.js"
+compatibility_date = "2023-09-22"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+crons=$$CRON_TRIGGERS$$

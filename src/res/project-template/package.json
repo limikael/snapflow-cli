@@ -1,0 +1,9 @@
+{
+  "name": "$$NAME$$",
+  "version": "1.0.0",
+  "license": "UNLICENSED",
+  "type": "module",
+  "dependencies": {
+    "snapflow-cli": "^1.0.0"
+  }
+}
