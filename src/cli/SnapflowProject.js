@@ -8,7 +8,7 @@ import urlJoin from "url-join";
 
 export default class SnapflowProject {
 	constructor({workflows, prefix, name, url, token}) {
-		if (url!="https://snapflow.wayan.dev")
+		if (url!="https://snapflow.com.au")
 			console.log("Using non-default url: "+url);
 
 		let headers={};

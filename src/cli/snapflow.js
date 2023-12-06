@@ -31,7 +31,7 @@ let yargsConf=yargs(hideBin(process.argv))
     })
     .option("url",{
         description: "Backend and api url. Should not be changed unless for debugging.",
-        default: "https://snapflow.wayan.dev"
+        default: "https://snapflow.com.au"
     })
     .option("query-json",{
         description: "Query to send when running single workflow, json encoded."
