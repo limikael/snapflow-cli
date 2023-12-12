@@ -17,7 +17,10 @@ import open from "open";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+let pkg=JSON.parse(fs.readFileSync(path.join(__dirname,"../../package.json")));
+
 let yargsConf=yargs(hideBin(process.argv))
+    .version("version","Show version.",pkg.version)
     .option("prefix",{
         default: process.cwd(),
         description: "Project dir.",
@@ -182,6 +185,9 @@ switch (options._[0]) {
 
         if (user.deploy_prefix)
             project.name=user.deploy_prefix+project.name;
+
+        if (user.cloudflare_account_id)
+            project.account_id=user.cloudflare_account_id;
 
         await buildProjectWorker(project);
 

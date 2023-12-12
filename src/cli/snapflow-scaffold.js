@@ -19,11 +19,16 @@ export async function buildProjectWorker(project) {
 		url: project.url
 	};
 
+	let accountInfo="";
+	if (project.account_id)
+		accountInfo=`account_id="${project.account_id}"`;
+
 	let replacemets={
 		"$$PROJECT_SPEC$$": JSON.stringify(spec),
 		"$$WORKFLOW_LIST$$": workflowList.join(","),
 		"$$PROJECT_NAME$$": project.name,
-		"$$CRON_TRIGGERS$$": JSON.stringify(project.getCrons())
+		"$$CRON_TRIGGERS$$": JSON.stringify(project.getCrons()),
+		"$$ACCOUNT_INFO$$": accountInfo
 	}
 
 	let targetDir=path.join(project.prefix,".snapflow/worker");
