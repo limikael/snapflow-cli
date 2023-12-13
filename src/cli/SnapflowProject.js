@@ -121,7 +121,11 @@ export default class SnapflowProject {
 
 		let result;
 		try {
-			result=await workflow.run({trigger: "hook", query: query});
+			result=await workflow.run({
+				trigger: "hook", 
+				query: query, 
+				request: c.req.raw
+			});
 		}
 
 		catch (e) {

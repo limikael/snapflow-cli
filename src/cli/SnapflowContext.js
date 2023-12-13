@@ -5,9 +5,10 @@ import {isPlainObject} from "../utils/js-util.js";
 dayjs.extend(utc);
 
 export default class SnapflowContext {
-	constructor({workflow, trigger, query}) {
+	constructor({workflow, trigger, query, request}) {
 		this.workflow=workflow;
 		this.project=this.workflow.project;
+		this.request=request;
 		this.qm=this.project.qm;
 		this.rpc=this.project.rpc;
 		this.trigger=trigger;

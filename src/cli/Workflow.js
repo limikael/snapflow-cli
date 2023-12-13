@@ -27,10 +27,10 @@ export default class Workflow {
 		return schedule;
 	}
 
-	async run({trigger, query}) {
+	async run({trigger, query, request}) {
 		console.log("Running workflow: "+this.client+"/"+this.name);
 
-		let context=new SnapflowContext({workflow: this, trigger, query});
+		let context=new SnapflowContext({workflow: this, trigger, query, request});
 		await context.initLogEntry();
 
 		let result;
