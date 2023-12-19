@@ -9,6 +9,8 @@ import chalk from "chalk";
 
 export default class SnapflowProject {
 	constructor({workflows, prefix, name, url, token, client}) {
+		console.log("project client: "+client);
+
 		if (url!="https://snapflow.com.au")
 			console.log("Using non-default url: "+url);
 
@@ -130,6 +132,8 @@ export default class SnapflowProject {
 		let argv=urlGetArgs(c.req.raw.url);
 		if (argv.length!=1)
 			throw new HTTPException(404,{message:"Expected workflow name in the url."});
+
+		console.log("workflow name: "+argv[0]);
 
 		let workflow=this.getWorkflow(argv[0]);
 		if (!workflow)

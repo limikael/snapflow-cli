@@ -8,15 +8,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export async function buildProjectWorker(project) {
 	let workflowList=project.workflows.map(workflow=>{
 		return `{
-			client: ${JSON.stringify(workflow.client)},
 			name: ${JSON.stringify(workflow.name)},
-			module: await import("../../client_workflows/${workflow.client}/${workflow.name}/workflow.js"),
+			module: await import("../../workflows/${workflow.name}/workflow.js"),
 		}`
 	});
 
 	let spec={
 		token: project.token,
-		url: project.url
+		url: project.url,
+		client: project.client,
 	};
 
 	let accountInfo="";
