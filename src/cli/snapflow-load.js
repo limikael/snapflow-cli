@@ -17,13 +17,15 @@ export async function loadSnapflowProject({prefix, url, token}) {
 	let workflows=[];
 	let workflowDirs=fs.readdirSync(path.join(prefix,"workflows"))
 	for (let workflowDir of workflowDirs) {
-		let fn=path.join(prefix,"workflows",workflowDir,"workflow.js");
-		let mod=await import(fn);
+		if (workflowDir.charAt(0).match(/[A-Za-z0-9]/)) {
+			let fn=path.join(prefix,"workflows",workflowDir,"workflow.js");
+			let mod=await import(fn);
 
-		workflows.push(new Workflow({
-			name: workflowDir,
-			module: mod
-		}));
+			workflows.push(new Workflow({
+				name: workflowDir,
+				module: mod
+			}));
+		}
 	}
 
 	return new SnapflowProject({
