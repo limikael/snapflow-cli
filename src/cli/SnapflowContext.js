@@ -21,9 +21,9 @@ export default class SnapflowContext {
 	}
 
 	async initialize() {
-		this.user=await this.qm.findOne("users",{name: this.workflow.client});
+		this.user=await this.qm.findOne("users",{name: this.project.client});
 		if (!this.user)
-			throw new Error("Unable to find client user.");
+			throw new Error("Unable to find client user: "+this.project.client);
 
 		let tokens=await this.qm.findMany("tokens",{user: this.user.id});
 		let tokensByProvider=Object.fromEntries(tokens.map(t=>[t.provider,t]));
@@ -80,15 +80,15 @@ export default class SnapflowContext {
 	}
 
 	async finalizeLogEntry({status, result, log}) {
-		let userId;
-		if (this.user)
-			userId=this.user.id;
-
-		await this.qm.update("logs",this.logId,{
-			user: this.user.id,
+		let data={
 			status: status,
 			result: result,
 			log: log
-		});
+		};
+
+		if (this.user)
+			data.user=this.user.id;
+
+		await this.qm.update("logs",this.logId,data);
 	}
 }

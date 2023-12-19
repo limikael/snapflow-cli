@@ -2,8 +2,7 @@ import SnapflowContext from "./SnapflowContext.js";
 import {captureConsole} from "../utils/capture-console.js";
 
 export default class Workflow {
-	constructor({client, name, module}) {
-		this.client=client;
+	constructor({name, module}) {
 		this.name=name;
 		this.module=module;
 	}
@@ -28,7 +27,7 @@ export default class Workflow {
 	}
 
 	async run({trigger, query, request}) {
-		console.log("Running workflow: "+this.client+"/"+this.name);
+		console.log("Running workflow: "+this.name);
 
 		let context=new SnapflowContext({workflow: this, trigger, query, request});
 		await context.initLogEntry();

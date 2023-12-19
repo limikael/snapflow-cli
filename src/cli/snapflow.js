@@ -39,12 +39,16 @@ let yargsConf=yargs(hideBin(process.argv))
     .option("query-json",{
         description: "Query to send when running single workflow, json encoded."
     })
+   .option("client",{
+        description: "Specify client when creating a project."
+    })
     .command("create <name>","Create new project.")
-    .command("add <client> <workflow>","Add workflow for client.")
-    .command("run <client> <workflow>","Run single client workflow.")
+    .command("add <workflow>","Add workflow to project.")
+    .command("run <workflow>","Run single workflow.")
     .command("serve","Start node server.")
     .command("serve:wrangler","Start local wrangler server.")
     .command("deploy","Deploy as CloudFlare Worker.")
+    .command("info","Show project info.")
     .command("ls","List workflows.")
     .command("login","Login and store credentials.")
     .strict()
@@ -100,26 +104,32 @@ switch (options._[0]) {
         break;
 
     case "create":
+        if (!options.client) {
+            console.log("You need to specify the client with the --client flag.");
+            process.exit(1);
+        }
+
         let replacements={
-            "$$NAME$$": options.name
+            "$$NAME$$": options.name,
+            "$$CLIENT$$": options.client
         };
 
         let srcDir=path.join(__dirname,"../res/project-template");
         await createProjectStructureFromTemplate(options.name,srcDir,replacements);
         fs.mkdirSync(path.join(options.name,"node_modules"));
         fs.symlinkSync(path.join(__dirname,"../.."),path.join(options.name,"node_modules","snapflow-cli"));
-        fs.mkdirSync(path.join(options.name,"client_workflows"));
-        console.log("Snapflow project created: "+options.name);
+        fs.mkdirSync(path.join(options.name,"workflows"));
+        console.log("Snapflow project created: "+options.name+", for client user: "+options.client);
         console.log("To create a workflow in the project: ");
         console.log("");
         console.log("  cd "+options.name);
-        console.log("  snapflow add <client> <workflow>");
+        console.log("  snapflow add <workflow>");
         console.log("");
         break;
 
     case "add":
         project=await loadSnapflowProject(options);
-        let workflowPath=path.join(options.prefix,"client_workflows",options.client,options.workflow);
+        let workflowPath=path.join(options.prefix,"workflows",options.workflow);
         if (fs.existsSync(workflowPath))
             throw new Error("Already exists: "+workflowPath);
 
@@ -127,16 +137,16 @@ switch (options._[0]) {
 
         let srcWorkflow=path.join(__dirname,"../res/workflow-template/workflow.js");
         fs.copyFileSync(srcWorkflow,path.join(workflowPath,"workflow.js"))
-        console.log("Workflow added: "+options.client+"/"+options.workflow);
+        console.log("Workflow added: "+options.workflow);
         console.log("To run the workflow do:");
         console.log("");
-        console.log("  snapflow run "+options.client+" "+options.workflow);
+        console.log("  snapflow run "+options.workflow);
         console.log("");
         break;
 
 	case "run":
         project=await loadSnapflowProject(options);
-        let workflow=project.getWorkflow(options.client,options.workflow);
+        let workflow=project.getWorkflow(options.workflow);
         if (!workflow) {
             console.log("No such workflow.");
             process.exit(1);
@@ -203,6 +213,11 @@ switch (options._[0]) {
         break;
 
     case "ls":
+        project=await loadSnapflowProject(options);
+        project.printWorkflowList();
+        break;
+
+    case "info":
         project=await loadSnapflowProject(options);
         project.printInfo();
         break;

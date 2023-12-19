@@ -5,5 +5,8 @@
   "type": "module",
   "dependencies": {
     "snapflow-cli": "^1.0.0"
+  },
+  "snapflow": {
+    "client": "$$CLIENT$$"
   }
 }
