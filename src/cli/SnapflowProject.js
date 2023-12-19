@@ -133,7 +133,7 @@ export default class SnapflowProject {
 		if (argv.length!=1)
 			throw new HTTPException(404,{message:"Expected workflow name in the url."});
 
-		console.log("workflow name: "+argv[0]);
+		//console.log("workflow name: "+argv[0]);
 
 		let workflow=this.getWorkflow(argv[0]);
 		if (!workflow)
@@ -152,9 +152,6 @@ export default class SnapflowProject {
 			throw new HTTPException(500,{message: e.message});
 		}
 
-		if (result===undefined)
-			return new Response();
-
-		return Response.json(result);
+		return result;
 	}
 }

@@ -14,6 +14,7 @@ import {buildProjectWorker} from "./snapflow-scaffold.js";
 import {runCommand, getUserPrefsDir, findNodeBin} from "../utils/node-util.js";
 import cron from "node-cron";
 import open from "open";
+import {loggableResponse} from "../utils/js-util.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -162,7 +163,7 @@ switch (options._[0]) {
         }
 
 		let result=await workflow.run({trigger: "run", query});
-        console.log(JSON.stringify(result,null,2));
+        console.log(JSON.stringify(await loggableResponse(result),null,2));
 		break;
 
     case "serve":

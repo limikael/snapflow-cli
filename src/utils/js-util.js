@@ -27,3 +27,22 @@ export function isPlainObject(value) {
 
 	return Object.getPrototypeOf(value)===Object.getPrototypeOf({})
 }
+
+export async function loggableResponse(response) {
+	let cloneResponse=response.clone();
+	let ret={
+		status: cloneResponse.status,
+	};
+
+	switch (cloneResponse.headers.get("content-type")) {
+		case "application/json":
+			ret.json=await cloneResponse.json();
+			break;
+
+		default:
+			ret.text=await cloneResponse.text();
+			break;
+	}
+
+	return ret;
+}

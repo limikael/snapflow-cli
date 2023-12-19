@@ -1,6 +1,6 @@
 {
   "name": "snapflow-cli",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "license": "MIT",
   "main": "src/cli/main.js",
   "bin": {

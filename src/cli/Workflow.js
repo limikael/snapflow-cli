@@ -1,5 +1,6 @@
 import SnapflowContext from "./SnapflowContext.js";
 import {captureConsole} from "../utils/capture-console.js";
+import {loggableResponse, isPlainObject} from "../utils/js-util.js";
 
 export default class Workflow {
 	constructor({name, module}) {
@@ -38,9 +39,16 @@ export default class Workflow {
 			await captureConsole(logLines,async()=>{
 				await context.initialize();
 				result=await this.module.default(context);
+
+				if (!result)
+					result=new Response();
+
+				else if (isPlainObject(result) || typeof result=="string")
+					result=Response.json(result);
+
 				await context.finalizeLogEntry({
 					status: "success", 
-					result: result, 
+					result: await loggableResponse(result), 
 					log: logLines.join("\n")
 				});
 			});
