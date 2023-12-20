@@ -8,6 +8,7 @@ let projectSpec={
 let app=new Hono();
 
 app.post("*",async (c)=>{
+	c.set("runtime","cf");
 	let project=new SnapflowProject(projectSpec);
 	return await project.handleHonoRequest(c);
 });
@@ -21,6 +22,6 @@ export default {
 		console.log("Running scheduled, cron="+evt.cron);
 
 		let project=new SnapflowProject(projectSpec);
-		await project.triggerCron(evt.cron);
+		await project.triggerCron(evt.cron,env,ctx);
 	}
 };

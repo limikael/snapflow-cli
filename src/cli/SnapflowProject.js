@@ -197,11 +197,11 @@ export default class SnapflowProject {
 		return crons;
 	}
 
-	async triggerCron(cron) {
+	async triggerCron(cron, env, ctx) {
 		for (let workflow of this.workflows)
 			if (cron==workflow.getSchedule()) {
 				try {
-					await workflow.run({trigger: "schedule"});
+					await workflow.run({trigger: "schedule",env,ctx});
 				}
 
 				catch (e) {
@@ -226,16 +226,20 @@ export default class SnapflowProject {
 		if (argv.length!=1)
 			throw new HTTPException(404,{message:"Expected workflow name in the url."});
 
-		//console.log("workflow name: "+argv[0]);
-
 		let workflow=this.getWorkflow(argv[0]);
 		if (!workflow)
 			throw new HTTPException(404,{message:"Undefined workflow."});
 
+		let ctx;
+		if (c.get("runtime")=="cf")
+			ctx=c.executionCtx;
+
 		let context=await workflow.run({
 			trigger: "hook", 
 			query: query, 
-			request: c.req.raw
+			request: c.req.raw,
+			env: c.env,
+			ctx: ctx
 		});
 
 		return context.getResponse();

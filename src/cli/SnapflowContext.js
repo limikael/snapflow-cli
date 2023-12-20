@@ -1,12 +1,12 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import {isPlainObject} from "../utils/js-util.js";
+import {isPlainObject, loggableResponse} from "../utils/js-util.js";
 import {captureConsole} from "../utils/capture-console.js";
 
 dayjs.extend(utc);
 
 export default class SnapflowContext {
-	constructor({workflow, trigger, query, request}) {
+	constructor({workflow, trigger, query, request, env, ctx}) {
 		this.workflow=workflow;
 		this.project=this.workflow.project;
 		this.request=request;
@@ -17,30 +17,22 @@ export default class SnapflowContext {
 		if (!this.query)
 			this.query={};
 
+		this.env=env;
+		if (!this.env)
+			this.env={};
+
+		this.ctx=ctx;
+
 		this.logLines=[];
 		this.tokens={};
+
+		this.dummyWaitUntils=[];
 	}
 
 	async initialize() {
-		console.log("getting user: "+this.project.client);
-
-		try {
-			this.user=await this.qm.findOne("users",{name: this.project.client});
-			console.log("got user: ",this.user);
-		}
-
-		catch (e) {
-			console.log("caught...");
-			console.log(e);
-			console.log(e.stack);
-			throw e;
-		}
-
-
+		this.user=await this.qm.findOne("users",{name: this.project.client});
 		if (!this.user)
 			throw new Error("Unable to find client user: "+this.project.client);
-
-		console.log("getting tokens");
 
 		let tokens=await this.qm.findMany("tokens",{user: this.user.id});
 		let tokensByProvider=Object.fromEntries(tokens.map(t=>[t.provider,t]));
@@ -82,20 +74,24 @@ export default class SnapflowContext {
 		}
 	}
 
-	async run() {
-		console.log("running...");
+	waitUntil(promise) {
+		if (this.ctx) {
+			//console.log("real wait until!");
+			this.ctx.waitUntil(promise);
+		}
 
+		else {
+			//console.log("dummy wait until...");
+			this.dummyWaitUntils.push(promise);
+		}
+	}
+
+	async run() {
 		this.logLines=[];
 		await captureConsole(this.logLines,async ()=>{
 			try {
-				console.log("initializing...");
-
 				await this.initialize();
-				console.log("done initializing...");
-
 				let response=await this.workflow.module.default(this);
-
-				console.log("did run workflow...");
 
 				if (!response)
 					response=new Response();
@@ -104,6 +100,7 @@ export default class SnapflowContext {
 					response=Response.json(response);
 
 				this.response=response;
+				this.success=true;
 			}
 
 			catch (e) {
@@ -111,9 +108,33 @@ export default class SnapflowContext {
 				this.response=new Response(String(e),{status: 500});
 			}
 		})
+
+		this.waitUntil(this.saveLog());
+
+		await Promise.all(this.dummyWaitUntils);
 	}
 
 	getResponse() {
 		return this.response;
+	}
+
+	async saveLog() {
+		let logEntry={
+			project: this.project.name,
+			workflow: this.workflow.name,
+			trigger: this.trigger,
+			query: this.query,
+			stamp: dayjs().utc().format("YYYY-MM-DD HH:mm:ss"),
+			status: this.success?"success":"error",
+			log: this.logLines.join("\n"),
+		}
+
+		if (this.response)
+			logEntry.result=await loggableResponse(this.response);
+
+		if (this.user)
+			logEntry.user=this.user.id;
+
+		await this.qm.insert("logs",logEntry);
 	}
 }

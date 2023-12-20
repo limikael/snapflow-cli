@@ -164,7 +164,7 @@ switch (options._[0]) {
         }
 
 		let context=await workflow.run({trigger: "run", query});
-        //await context.saveLog();
+
         console.log(JSON.stringify(await loggableResponse(context.getResponse()),null,2));
 		break;
 
@@ -177,7 +177,10 @@ switch (options._[0]) {
         }
 
         let app=new Hono();
-        app.post("*",c=>project.handleHonoRequest(c));
+        app.post("*",c=>{
+            c.set("runtime","node");
+            return project.handleHonoRequest(c)
+        });
 
         serve({fetch: app.fetch, port: options.port},(info)=>{
             console.log(`Listening on http://localhost:${info.port}`)
