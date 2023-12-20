@@ -67,6 +67,7 @@ export default class SnapflowContext {
 
 	async initLogEntry() {
 		let logItem=await this.qm.insert("logs",{
+			project: this.project.name,
 			workflow: this.workflow.name,
 			trigger: this.trigger,
 			query: this.query,

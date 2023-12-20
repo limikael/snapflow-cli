@@ -51,6 +51,7 @@ let yargsConf=yargs(hideBin(process.argv))
     .command("deploy","Deploy as CloudFlare Worker.")
     .command("info","Show project info.")
     .command("ls","List workflows.")
+    .command("triggers","List workflows triggers.")
     .command("login","Login and store credentials.")
     .strict()
     .demandCommand()
@@ -192,14 +193,7 @@ switch (options._[0]) {
 
     case "deploy":
         project=await loadSnapflowProject(options);
-        let user=await project.rpc.getUserInfo();
-
-        if (user.deploy_prefix)
-            project.name=user.deploy_prefix+project.name;
-
-        if (user.cloudflare_account_id)
-            project.account_id=user.cloudflare_account_id;
-
+        let user=await project.getUser();
         await buildProjectWorker(project);
 
         let env={
@@ -211,15 +205,22 @@ switch (options._[0]) {
         await runCommand(wranglerPath,["deploy",
             "--config",".snapflow/worker/wrangler.toml",
         ],{passthrough: true, env: env});
+
+        await project.printWorkflowTriggers();
         break;
 
     case "ls":
         project=await loadSnapflowProject(options);
-        project.printWorkflowList();
+        await project.printWorkflowList();
+        break;
+
+    case "triggers":
+        project=await loadSnapflowProject(options);
+        await project.printWorkflowTriggers();
         break;
 
     case "info":
         project=await loadSnapflowProject(options);
-        project.printInfo();
+        await project.printInfo();
         break;
 }

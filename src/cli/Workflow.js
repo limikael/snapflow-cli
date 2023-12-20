@@ -29,6 +29,7 @@ export default class Workflow {
 
 	async run({trigger, query, request}) {
 		console.log("Running workflow: "+this.name);
+		//console.log("project: ",this.project);
 
 		let context=new SnapflowContext({workflow: this, trigger, query, request});
 		await context.initLogEntry();

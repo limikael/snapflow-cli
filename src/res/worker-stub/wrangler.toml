@@ -3,7 +3,7 @@ main = "worker.js"
 compatibility_date = "2023-09-22"
 compatibility_flags = ["nodejs_compat"]
 
-$$ACCOUNT_INFO$$
+account_id="$$ACCOUNT_ID$$"
 
 [triggers]
 crons=$$CRON_TRIGGERS$$

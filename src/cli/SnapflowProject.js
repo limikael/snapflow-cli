@@ -9,8 +9,6 @@ import chalk from "chalk";
 
 export default class SnapflowProject {
 	constructor({workflows, prefix, name, url, token, client}) {
-		console.log("project client: "+client);
-
 		if (url!="https://snapflow.com.au")
 			console.log("Using non-default url: "+url);
 
@@ -51,7 +49,65 @@ export default class SnapflowProject {
 		this.workflows.push(workflow);
 	}
 
-	printInfo() {
+	async getLogs() {
+		return await this.qm.findMany("logs",{project: this.name});
+	}
+
+	async getUser() {
+		if (!this.user) {
+			this.user=await this.rpc.getUserInfo();
+			if (!this.user)
+				throw new Error("Unable to get user info.");
+
+			if (!this.user.cloudflare_api_token)
+				throw new Error("Cloudflare API token not set for your user.");
+
+			if (!this.user.cloudflare_account_id)
+				throw new Error("Cloudflare Account ID not set for your user.");
+		}
+
+		return this.user;
+	}
+
+	async getWorkerUrl() {
+        let user=await this.getUser();
+
+        let u=`https://api.cloudflare.com/client/v4/accounts/${user.cloudflare_account_id}/workers/subdomain`;
+        let subdomainResponse=await fetch(u,{
+        	headers: {
+        		"authorization": "Bearer "+user.cloudflare_api_token,
+        		"content-type": "application/json"
+        	}
+        });
+
+        if (subdomainResponse.status<200 || subdomainResponse.status>=300)
+        	throw new Error("Cloudflare api response: "+subdomainResponse.status+" "+await subdomainResponse.text());
+
+        let subdomainResult=await subdomainResponse.json();
+        return "https://"+this.name+"."+subdomainResult.result.subdomain+".workers.dev";
+	}
+
+	async getScriptInfo() {
+        let user=await this.getUser();
+
+        let u=`https://api.cloudflare.com/client/v4/accounts/${user.cloudflare_account_id}/workers/scripts`;
+        let scriptsResponse=await fetch(u,{
+        	headers: {
+        		"authorization": "Bearer "+user.cloudflare_api_token,
+        		"content-type": "application/json"
+        	}
+        });
+
+        if (scriptsResponse.status<200 || scriptsResponse.status>=300)
+        	throw new Error("Cloudflare api response: "+scriptsResponse.status+" "+await scriptsResponse.text());
+
+        let scriptsResult=await scriptsResponse.json();
+        let scriptsById=Object.fromEntries(scriptsResult.result.map(r=>[r.id,r]));
+
+        return scriptsById[this.name];
+	}
+
+	async printInfo() {
 		let t=new Table({
 			columns: [
 				{name: "key", alignment: "left", color: "white_bold", title: chalk.white("name") },
@@ -59,29 +115,66 @@ export default class SnapflowProject {
 			]
 		});
 
-		t.addRow({
-			key: "client",
-			value: this.client,
-		})
+        let user=await this.rpc.getUserInfo();
 
-		console.log(t.table.renderTable()); //printTable();
+		t.addRow({key: "client", value: this.client});
+		t.addRow({key: "user", value: user.name});
+		t.addRow({key: "worker url", value: await this.getWorkerUrl()});
+
+		let scriptInfo=await this.getScriptInfo();
+		let deployedString;
+		if (scriptInfo)
+			deployedString=scriptInfo.modified_on;
+
+		else
+			deployedString="no";
+
+		t.addRow({key: "deployed", value: deployedString});
+
+		let logs=await this.getLogs();
+		t.addRow({key: "invocations", value: logs.length});
+		t.addRow({key: "errors", value: logs.filter(l=>l.status!="success").length});
+
+		t.printTable();
 	}
 
-	printWorkflowList() {
+	async printWorkflowList() {
+		let logs=await this.getLogs();
+
 		let t=new Table({
 			columns: [
 				{name: "workflow", alignment: "left" },
-				{name: "tokens", alignment: "left" },
 				{name: "schedule", alignment: "left" },
-			]			
+				{name: "invocations", alignment: "left" },
+				{name: "errors", alignment: "left" },
+			]
 		});
 
 		let infoTable=[];
 		for (let workflow of this.workflows)
 			t.addRow({
 				workflow: workflow.name,
-				tokens: workflow.module.TOKENS,
-				schedule: workflow.module.SCHEDULE
+				schedule: workflow.module.SCHEDULE,
+				invocations: logs.filter(l=>l.workflow==workflow.name).length,
+				errors: logs.filter(l=>(l.workflow==workflow.name && l.status!="success")).length
+			})
+
+		t.printTable();
+	}
+
+	async printWorkflowTriggers() {
+		let t=new Table({
+			columns: [
+				{name: "trigger", alignment: "left" },
+			]
+		});
+
+		let workerUrl=await this.getWorkerUrl();
+
+		let infoTable=[];
+		for (let workflow of this.workflows)
+			t.addRow({
+				trigger: urlJoin(workerUrl,workflow.name)
 			})
 
 		t.printTable();
