@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import {isPlainObject} from "../utils/js-util.js";
+import {captureConsole} from "../utils/capture-console.js";
 
 dayjs.extend(utc);
 
@@ -21,9 +22,25 @@ export default class SnapflowContext {
 	}
 
 	async initialize() {
-		this.user=await this.qm.findOne("users",{name: this.project.client});
+		console.log("getting user: "+this.project.client);
+
+		try {
+			this.user=await this.qm.findOne("users",{name: this.project.client});
+			console.log("got user: ",this.user);
+		}
+
+		catch (e) {
+			console.log("caught...");
+			console.log(e);
+			console.log(e.stack);
+			throw e;
+		}
+
+
 		if (!this.user)
 			throw new Error("Unable to find client user: "+this.project.client);
+
+		console.log("getting tokens");
 
 		let tokens=await this.qm.findMany("tokens",{user: this.user.id});
 		let tokensByProvider=Object.fromEntries(tokens.map(t=>[t.provider,t]));
@@ -65,31 +82,38 @@ export default class SnapflowContext {
 		}
 	}
 
-	async initLogEntry() {
-		let logItem=await this.qm.insert("logs",{
-			project: this.project.name,
-			workflow: this.workflow.name,
-			trigger: this.trigger,
-			query: this.query,
-			stamp: dayjs().utc().format("YYYY-MM-DD HH:mm:ss")
-		});
-		this.logId=logItem.id;
+	async run() {
+		console.log("running...");
+
+		this.logLines=[];
+		await captureConsole(this.logLines,async ()=>{
+			try {
+				console.log("initializing...");
+
+				await this.initialize();
+				console.log("done initializing...");
+
+				let response=await this.workflow.module.default(this);
+
+				console.log("did run workflow...");
+
+				if (!response)
+					response=new Response();
+
+				else if (isPlainObject(response) || typeof response=="string")
+					response=Response.json(response);
+
+				this.response=response;
+			}
+
+			catch (e) {
+				console.log(e.stack);
+				this.response=new Response(String(e),{status: 500});
+			}
+		})
 	}
 
-	log(...args) {
-		console.log(...args);
-	}
-
-	async finalizeLogEntry({status, result, log}) {
-		let data={
-			status: status,
-			result: result,
-			log: log
-		};
-
-		if (this.user)
-			data.user=this.user.id;
-
-		await this.qm.update("logs",this.logId,data);
+	getResponse() {
+		return this.response;
 	}
 }

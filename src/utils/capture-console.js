@@ -54,6 +54,10 @@ export function installCaptureConsole() {
 		console.log("Object:\n"+getDirOutput("    ",arg).join("\n"));
 	}
 
+	console.error=(...args)=>{
+		console.log(...args);
+	}
+
 	captureConsoleInstalled=true;
 }
 

@@ -1,5 +1,4 @@
 import SnapflowContext from "./SnapflowContext.js";
-import {captureConsole} from "../utils/capture-console.js";
 import {loggableResponse, isPlainObject} from "../utils/js-util.js";
 
 export default class Workflow {
@@ -32,7 +31,11 @@ export default class Workflow {
 		//console.log("project: ",this.project);
 
 		let context=new SnapflowContext({workflow: this, trigger, query, request});
-		await context.initLogEntry();
+		await context.run();
+
+		return context;
+
+		/*await context.initLogEntry();
 
 		let result;
 		let logLines=[];
@@ -63,6 +66,6 @@ export default class Workflow {
 			throw e;
 		}
 
-		return result;
+		return result;*/
 	}
 }

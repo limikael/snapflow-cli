@@ -232,19 +232,12 @@ export default class SnapflowProject {
 		if (!workflow)
 			throw new HTTPException(404,{message:"Undefined workflow."});
 
-		let result;
-		try {
-			result=await workflow.run({
-				trigger: "hook", 
-				query: query, 
-				request: c.req.raw
-			});
-		}
+		let context=await workflow.run({
+			trigger: "hook", 
+			query: query, 
+			request: c.req.raw
+		});
 
-		catch (e) {
-			throw new HTTPException(500,{message: e.message});
-		}
-
-		return result;
+		return context.getResponse();
 	}
 }

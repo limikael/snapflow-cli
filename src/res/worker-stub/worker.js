@@ -14,7 +14,7 @@ app.post("*",async (c)=>{
 
 export default {
 	async fetch(req, env, ctx) {
-		return await app.fetch(req, env);
+		return await app.fetch(req, env, ctx);
 	},
 
 	async scheduled(evt, env, ctx) {

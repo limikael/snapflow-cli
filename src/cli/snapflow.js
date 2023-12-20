@@ -163,8 +163,9 @@ switch (options._[0]) {
             query=JSON.parse(options.queryJson);
         }
 
-		let result=await workflow.run({trigger: "run", query});
-        console.log(JSON.stringify(await loggableResponse(result),null,2));
+		let context=await workflow.run({trigger: "run", query});
+        //await context.saveLog();
+        console.log(JSON.stringify(await loggableResponse(context.getResponse()),null,2));
 		break;
 
     case "serve":
