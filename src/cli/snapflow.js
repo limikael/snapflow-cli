@@ -15,6 +15,7 @@ import {runCommand, getUserPrefsDir, findNodeBin} from "../utils/node-util.js";
 import cron from "node-cron";
 import open from "open";
 import {loggableResponse} from "../utils/js-util.js";
+import {loadHookRunner} from "../hooks/hook-loader.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -53,6 +54,7 @@ let yargsConf=yargs(hideBin(process.argv))
     .command("ls","List workflows.")
     .command("triggers","List workflows triggers.")
     .command("login","Login and store credentials.")
+    .command("hooks","Show info about installed hooks.")
     .strict()
     .demandCommand()
     .usage("snapflow -- Workflow runner and scheduler.");
@@ -70,6 +72,19 @@ if (fs.existsSync(fn)) {
 }
 
 switch (options._[0]) {
+    case "hooks":
+        let hookRunner=await loadHookRunner(options.prefix,{keyword: "snapflow-hook"});
+        let listenersByEvent=hookRunner.getListenersByEvent();
+        for (let event in listenersByEvent) {
+            console.log(event+":");
+            for (let listener of listenersByEvent[event])
+                console.log("  - "+listener.description);
+
+            console.log();
+        }
+        //await hookRunner.emit(new HookEvent("info"));
+        break;
+
     case "login":
         let loginApp=new Hono();
         loginApp.post("*",async (c)=>{
@@ -196,21 +211,42 @@ switch (options._[0]) {
         break;
 
     case "deploy":
-        project=await loadSnapflowProject(options);
-        let user=await project.getUser();
-        await buildProjectWorker(project);
+        await (async ()=>{
+            project=await loadSnapflowProject(options);
+            let hookRunner=await loadHookRunner(options.prefix,{keyword: "snapflow-hook"});
+            console.log("Running deploy hooks...");
+            try {
+                await hookRunner.emit("deploy",{prefix: options.prefix});
+            }
 
-        let env={
-            ...process.env,
-            CLOUDFLARE_API_TOKEN: user.cloudflare_api_token
-        };
+            catch (e) {
+                if (!e.declared)
+                    throw e;
 
-        let wranglerPath=findNodeBin(__dirname,"wrangler");
-        await runCommand(wranglerPath,["deploy",
-            "--config",".snapflow/worker/wrangler.toml",
-        ],{passthrough: true, env: env});
+                console.log("Unable to deploy, please fix the following:");
+                console.log();
+                console.log("  "+e.message);
+                console.log();
+                process.exit(1);
+            }
 
-        await project.printWorkflowTriggers();
+            console.log("Deploy hooks complete...");
+
+            let user=await project.getUser();
+            await buildProjectWorker(project);
+
+            let env={
+                ...process.env,
+                CLOUDFLARE_API_TOKEN: user.cloudflare_api_token
+            };
+
+            let wranglerPath=findNodeBin(__dirname,"wrangler");
+            await runCommand(wranglerPath,["deploy",
+                "--config",".snapflow/worker/wrangler.toml",
+            ],{passthrough: true, env: env});
+
+            await project.printWorkflowTriggers();
+        })();
         break;
 
     case "ls":
