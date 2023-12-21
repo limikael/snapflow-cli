@@ -2,7 +2,7 @@
 
 import yargs from "yargs/yargs";
 import {hideBin} from "yargs/helpers";
-import {loadSnapflowProject} from "./snapflow-load.js";
+import {loadSnapflowProject, snapflowProjectPrintInfo, snapflowCheckDependencyVersion} from "./snapflow-load.js";
 import SnapflowProject from "./SnapflowProject.js";
 import {createProjectStructureFromTemplate} from "../utils/scaffold.js";
 import path from "path";
@@ -128,7 +128,8 @@ switch (options._[0]) {
 
         let replacements={
             "$$NAME$$": options.name,
-            "$$CLIENT$$": options.client
+            "$$CLIENT$$": options.client,
+            "$$VERSION$$": pkg.version
         };
 
         let srcDir=path.join(__dirname,"../res/project-template");
@@ -163,6 +164,7 @@ switch (options._[0]) {
 
 	case "run":
         project=await loadSnapflowProject(options);
+        snapflowCheckDependencyVersion(project,pkg.version);
         let workflow=project.getWorkflow(options.workflow);
         if (!workflow) {
             console.log("No such workflow.");
@@ -185,6 +187,7 @@ switch (options._[0]) {
 
     case "serve":
         project=await loadSnapflowProject(options);
+        snapflowCheckDependencyVersion(project,pkg.version);
         for (let expr of project.getCrons()) {
             cron.schedule(expr,()=>{
                 project.triggerCron(expr);
@@ -204,6 +207,7 @@ switch (options._[0]) {
 
     case "serve:wrangler":
         project=await loadSnapflowProject(options);
+        snapflowCheckDependencyVersion(project,pkg.version);
         await buildProjectWorker(project);
         await runCommand("wrangler",["dev","--test-scheduled",
             "--config",".snapflow/worker/wrangler.toml",
@@ -213,6 +217,7 @@ switch (options._[0]) {
     case "deploy":
         await (async ()=>{
             project=await loadSnapflowProject(options);
+            snapflowCheckDependencyVersion(project,pkg.version);
             let hookRunner=await loadHookRunner(options.prefix,{keyword: "snapflow-hook"});
             console.log("Running deploy hooks...");
             try {
@@ -261,6 +266,6 @@ switch (options._[0]) {
 
     case "info":
         project=await loadSnapflowProject(options);
-        await project.printInfo();
+        await snapflowProjectPrintInfo(project);
         break;
 }

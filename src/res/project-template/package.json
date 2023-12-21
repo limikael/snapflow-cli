@@ -4,7 +4,7 @@
   "license": "UNLICENSED",
   "type": "module",
   "dependencies": {
-    "snapflow-cli": "^1.0.0"
+    "snapflow-cli": "^$$VERSION$$"
   },
   "snapflow": {
     "client": "$$CLIENT$$"

@@ -107,37 +107,6 @@ export default class SnapflowProject {
         return scriptsById[this.name];
 	}
 
-	async printInfo() {
-		let t=new Table({
-			columns: [
-				{name: "key", alignment: "left", color: "white_bold", title: chalk.white("name") },
-				{name: "value", alignment: "left", title: chalk.reset.dim(this.name) },
-			]
-		});
-
-        let user=await this.rpc.getUserInfo();
-
-		t.addRow({key: "client", value: this.client});
-		t.addRow({key: "user", value: user.name});
-		t.addRow({key: "worker url", value: await this.getWorkerUrl()});
-
-		let scriptInfo=await this.getScriptInfo();
-		let deployedString;
-		if (scriptInfo)
-			deployedString=scriptInfo.modified_on;
-
-		else
-			deployedString="no";
-
-		t.addRow({key: "deployed", value: deployedString});
-
-		let logs=await this.getLogs();
-		t.addRow({key: "invocations", value: logs.length});
-		t.addRow({key: "errors", value: logs.filter(l=>l.status!="success").length});
-
-		t.printTable();
-	}
-
 	async printWorkflowList() {
 		let logs=await this.getLogs();
 

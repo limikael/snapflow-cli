@@ -42,6 +42,17 @@ export function getUserPrefsDir() {
 	);
 }
 
+export function findNodeDependency(cwd, name) {
+	let dirs=findNodeModules({cwd: cwd, relative: false});
+	for (let dir of dirs) {
+		let fn=path.join(dir,name);
+		if (fs.existsSync(fn))
+			return fn;
+	}
+
+	throw new Error("Can't find dependency: "+name);
+}	
+
 export function findNodeBin(cwd, name) {
 	let dirs=findNodeModules({cwd: cwd, relative: false});
 	for (let dir of dirs) {
