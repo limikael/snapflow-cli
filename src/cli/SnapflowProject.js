@@ -182,10 +182,11 @@ export default class SnapflowProject {
 
 	handleHonoRequest=async (c)=>{
 		let query;
+
 		if (c.req.headers.get("content-type")=="application/json")
 			query=await c.req.json();
 
-		else 
+		else if (c.req.headers.get("content-type")=="application/x-www-form-urlencoded")
 			query=await c.req.parseBody();
 
 		if (c.req.method!="POST")
